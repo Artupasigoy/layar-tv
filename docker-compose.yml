@@ -1,0 +1,70 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: web-layar-tv
+        restart: unless-stopped
+        working_dir: /var/www/html
+        volumes:
+            - .:/var/www/html
+            - ./storage:/var/www/html/storage
+            - ./bootstrap/cache:/var/www/html/bootstrap/cache
+
+        environment:
+            - APP_ENV=production
+            - APP_DEBUG=false
+            - DB_CONNECTION=mysql
+            - DB_HOST=db
+            - DB_PORT=3306
+            - DB_DATABASE=web-layar-tv
+            - DB_USERNAME=root
+            - DB_PASSWORD=Kominfo123#!
+        networks:
+            - layar-tv
+        depends_on:
+            - db
+            
+    nginx:
+        image: nginx:alpine
+        container_name: laravel_nginx
+        restart: unless-stopped
+        ports:
+            - "80:80"
+        volumes:
+            - .:/var/www/html
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - app
+
+        networks:
+            - layar-tv
+
+    db:
+        image: mariadb:10.11
+        container_name: laravel_db
+        restart: unless-stopped
+        environment:
+            MARIADB_DATABASE: web-layar-tv
+            MARIADB_USER: root
+            MARIADB_PASSWORD: Kominfo123#!
+            MARIADB_ROOT_PASSWORD: Kominfo123#!
+
+        command:
+            --default-authentication-plugin=mysql_native_password
+
+        ports:
+            - "3306:3306"
+        volumes:
+            - db_data:/var/lib/mysql
+
+        networks:
+            - layar-tv
+
+    networks:
+        layar-tv:
+            driver: bridge
+
+    volumes:
+        db_data: 
+            driver: local
