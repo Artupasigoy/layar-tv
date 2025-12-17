@@ -65,6 +65,6 @@ services:
         layar-tv:
             driver: bridge
 
-    volumes:
-        db_data: 
-            driver: local
+volumes:
+    db_data: 
+        driver: local
