@@ -1,4 +1,4 @@
-FROM php:8.2-pfm
+FROM php:8.2-fpm
 RUN apt update && apt install -y \
     git curl zip unzip libonig-dev libxml2-dev libzip-dev libicu-dev \
     libpng-dev libjpeg-dev libfreetype6-dev \
