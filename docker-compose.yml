@@ -61,9 +61,9 @@ services:
         networks:
             - layar-tv
 
-    networks:
-        layar-tv:
-            driver: bridge
+networks:
+    layar-tv:
+        driver: bridge
 
 volumes:
     db_data: 
