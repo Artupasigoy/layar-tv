@@ -17,8 +17,11 @@
                 file: null,
                 fileName: null,
                 fileSize: null,
+                fileSizeBytes: 0,
                 progress: 0,
                 isUploading: false,
+                fileSizeError: null,
+                maxFileSizeMB: {{ $maxFileSizeMB }},
                 formatSize(bytes) {
                     if (bytes === 0) return '0 Bytes';
                     const k = 1024;
@@ -29,9 +32,23 @@
                 handleFile(event) {
                     const file = event.target.files[0];
                     if (file) {
+                        // Client-side validation BEFORE upload
+                        const maxBytes = this.maxFileSizeMB * 1024 * 1024;
+                        if (file.size > maxBytes) {
+                            this.fileSizeError = 'Ukuran file (' + this.formatSize(file.size) + ') melebihi batas maksimal ' + this.maxFileSizeMB + ' MB. File tidak akan diupload.';
+                            this.file = null;
+                            this.fileName = null;
+                            this.fileSize = null;
+                            this.fileSizeBytes = 0;
+                            event.target.value = ''; // Clear the input
+                            return;
+                        }
+                        
+                        this.fileSizeError = null;
                         this.file = file;
                         this.fileName = file.name;
                         this.fileSize = this.formatSize(file.size);
+                        this.fileSizeBytes = file.size;
                         this.progress = 0;
                         this.isUploading = false;
                     }
@@ -65,6 +82,8 @@
                     this.file = null;
                     this.fileName = null;
                     this.fileSize = null;
+                    this.fileSizeBytes = 0;
+                    this.fileSizeError = null;
                     this.progress = 0;
                     document.getElementById('file').value = '';
                 }
@@ -89,7 +108,8 @@
                                     </svg>
                                     <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Klik untuk pilih
                                             file</span></p>
-                                    <p class="text-xs text-gray-500">MP4, JPG, PNG, WEBP (Maks. 50MB)</p>
+                                    <p class="text-xs text-gray-500">MP4, JPG, PNG, WEBP (Maks. <span
+                                            x-text="maxFileSizeMB"></span>MB)</p>
                                 </div>
 
                                 <!-- File Selected State -->
@@ -121,6 +141,19 @@
                                 <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300"
                                     :style="'width: ' + progress + '%'"></div>
                             </div>
+                        </div>
+
+                        <!-- Client-side File Size Error -->
+                        <div x-show="fileSizeError" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg"
+                            style="display: none;">
+                            <p class="text-red-600 text-sm font-medium flex items-center gap-2">
+                                <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                <span x-text="fileSizeError"></span>
+                            </p>
                         </div>
 
                         @error('file') <span class="text-red-500 text-sm block mt-2 text-center">{{ $message }}</span>

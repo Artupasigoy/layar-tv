@@ -9,9 +9,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    Pengaturan Layar
+                    Pengaturan
                 </h2>
-                <p class="mt-1 text-sm text-gray-500">Sesuaikan tampilan signage TV Anda di sini.</p>
+                <p class="mt-1 text-sm text-gray-500">Sesuaikan pengaturan aplikasi signage Anda di sini.</p>
             </div>
 
             <div class="p-8">
@@ -112,6 +112,24 @@
                         <p class="mt-1 text-xs text-gray-500">Berapa lama setiap gambar ditampilkan sebelum berganti.
                         </p>
                         @error('image_duration') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+                    </div>
+
+                    <!-- Max File Size -->
+                    <div>
+                        <label for="max_file_size" class="block text-sm font-medium text-gray-700 mb-1">Maksimal Ukuran
+                            File Upload</label>
+                        <div class="relative rounded-md shadow-sm">
+                            <input wire:model="max_file_size" type="number" id="max_file_size" min="1" max="500"
+                                class="block w-full pr-12 border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-3"
+                                placeholder="50">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">MB</span>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Ukuran maksimal file yang dapat diupload (gambar dan
+                            video). Maks: 500 MB.
+                        </p>
+                        @error('max_file_size') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">

@@ -62,9 +62,9 @@
         }
     </style>
 
-    <!-- Image Loop (Only Images in the loop) -->
-    <template x-for="(item, index) in media" :key="item.id">
-        <div x-show="currentIndex === index && item.type === 'image'"
+    <!-- Image Loop (Lazy Loading: Only render prev, current, next) -->
+    <template x-for="item in visibleImages" :key="'img-' + item.id">
+        <div x-show="currentIndex === item.originalIndex && item.type === 'image'"
             x-transition:enter="transition opacity duration-1000" x-transition:enter-start="opacity-0"
             x-transition:enter-end="opacity-100" x-transition:leave="transition opacity duration-1000"
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
@@ -154,10 +154,57 @@
                 started: false,
                 isMuted: false,
                 isPreview: false,
+                preloadedImages: {}, // Image cache for preloading
+
+                // Computed: Get only visible images (prev, current, next) for lazy loading
+                get visibleImages() {
+                    if (this.media.length === 0) return [];
+                    if (this.media.length <= 3) {
+                        return this.media.map((m, i) => ({ ...m, originalIndex: i }));
+                    }
+
+                    const len = this.media.length;
+                    const prev = (this.currentIndex - 1 + len) % len;
+                    const next = (this.currentIndex + 1) % len;
+
+                    // Return unique indices (handle edge cases)
+                    const indices = [...new Set([prev, this.currentIndex, next])];
+                    return indices.map(i => ({ ...this.media[i], originalIndex: i }));
+                },
 
                 // Computed-like property for current item
                 get currentItem() {
                     return this.media[this.currentIndex] || null;
+                },
+
+                // Preload an image into cache
+                preloadImage(url) {
+                    if (!url || this.preloadedImages[url]) return;
+                    const img = new Image();
+                    img.src = url;
+                    this.preloadedImages[url] = img;
+                },
+
+                // Preload the next image before transition
+                preloadNext() {
+                    if (this.media.length === 0) return;
+                    const nextIndex = (this.currentIndex + 1) % this.media.length;
+                    const nextItem = this.media[nextIndex];
+                    if (nextItem && nextItem.type === 'image') {
+                        this.preloadImage(nextItem.url);
+                    }
+                },
+
+                // Cleanup old cached images to free memory
+                cleanupOldMedia() {
+                    const visible = this.visibleImages;
+                    const visibleUrls = visible.map(m => m.url);
+                    // Remove cached images that are no longer in visible range
+                    Object.keys(this.preloadedImages).forEach(url => {
+                        if (!visibleUrls.includes(url)) {
+                            delete this.preloadedImages[url];
+                        }
+                    });
                 },
 
                 init() {
@@ -197,6 +244,9 @@
                         ctx.resume();
                     }
                     this.playCurrent();
+
+                    // Preload the next image immediately after starting
+                    this.preloadNext();
 
                     setInterval(() => {
                         this.checkUpdates();
@@ -246,9 +296,14 @@
                 },
 
                 next() {
+                    // Preload the upcoming image before transition
+                    this.preloadNext();
+
                     this.currentIndex = (this.currentIndex + 1) % this.media.length;
                     this.$nextTick(() => {
                         this.playCurrent();
+                        // Cleanup old media from cache after transition
+                        this.cleanupOldMedia();
                     });
                 },
 

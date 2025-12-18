@@ -15,6 +15,7 @@ class DisplaySettings extends Component
     public $show_clock;
     public $enable_animation;
     public $image_duration;
+    public $max_file_size;
     public $delete_logo_pending = false;
 
     public function mount()
@@ -24,6 +25,7 @@ class DisplaySettings extends Component
         $this->show_clock = (bool) $settings->show_clock;
         $this->enable_animation = (bool) $settings->enable_animation;
         $this->image_duration = $settings->image_duration;
+        $this->max_file_size = $settings->max_file_size ?? 50;
     }
 
     public function deleteLogo()
@@ -40,9 +42,11 @@ class DisplaySettings extends Component
             'show_clock' => 'boolean',
             'enable_animation' => 'boolean',
             'image_duration' => 'required|integer|min:3',
+            'max_file_size' => 'required|integer|min:1|max:500',
         ], [
             'logo.max' => 'Ukuran file tidak boleh lebih dari 1 MB.',
             'logo.image' => 'File harus berupa gambar.',
+            'max_file_size.max' => 'Maksimal ukuran file tidak boleh lebih dari 500 MB.',
         ]);
 
         $settings = Setting::first();
@@ -51,6 +55,7 @@ class DisplaySettings extends Component
             'show_clock' => $this->show_clock,
             'enable_animation' => $this->enable_animation,
             'image_duration' => $this->image_duration,
+            'max_file_size' => $this->max_file_size,
         ];
 
         if ($this->logo) {

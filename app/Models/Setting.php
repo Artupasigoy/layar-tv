@@ -11,6 +11,7 @@ class Setting extends Model
         'logo_path',
         'image_duration',
         'enable_animation',
+        'max_file_size',
     ];
     protected $casts = [
         'show_clock' => 'boolean',

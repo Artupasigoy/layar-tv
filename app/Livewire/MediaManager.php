@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Models\Media;
+use App\Models\Setting;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -16,13 +17,17 @@ class MediaManager extends Component
     public $file;
     public $type = 'image'; // Default
 
-    protected $rules = [
-        'file' => 'required|file|mimes:jpg,jpeg,png,webp,mp4|max:51200', // 50MB max, restricted to images and mp4
-    ];
-
     public function save()
     {
-        $this->validate();
+        // Get max file size from settings (in MB), convert to KB for validation
+        $settings = Setting::first();
+        $maxFileSizeKB = ($settings->max_file_size ?? 50) * 1024;
+
+        $this->validate([
+            'file' => "required|file|mimes:jpg,jpeg,png,webp,mp4|max:{$maxFileSizeKB}",
+        ], [
+            'file.max' => 'Ukuran file tidak boleh lebih dari ' . ($settings->max_file_size ?? 50) . ' MB.',
+        ]);
 
         $path = $this->file->store('media', 'public');
         $mime = $this->file->getMimeType();
@@ -155,8 +160,13 @@ class MediaManager extends Component
             $query->where('is_active', false);
         }
 
+        // Get max file size from settings for client-side validation
+        $settings = Setting::first();
+        $maxFileSizeMB = $settings->max_file_size ?? 50;
+
         return view('livewire.media-manager', [
             'medias' => $query->paginate(6),
+            'maxFileSizeMB' => $maxFileSizeMB,
         ])->layout('layouts.app');
     }
 }
