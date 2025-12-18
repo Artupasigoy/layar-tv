@@ -2,6 +2,9 @@
 
 namespace App\Livewire;
 
+use App\Jobs\GeneratePlaylistJob;
+use App\Jobs\ProcessImageJob;
+use App\Jobs\ProcessVideoJob;
 use App\Models\Media;
 use App\Models\Setting;
 use Livewire\Component;
@@ -17,6 +20,11 @@ class MediaManager extends Component
     public $file;
     public $type = 'image'; // Default
 
+    public function getHasProcessingItemsProperty()
+    {
+        return Media::whereIn('processing_status', ['pending', 'processing'])->exists();
+    }
+
     public function save()
     {
         // Get max file size from settings (in MB), convert to KB for validation
@@ -29,7 +37,7 @@ class MediaManager extends Component
             'file.max' => 'Ukuran file tidak boleh lebih dari ' . ($settings->max_file_size ?? 50) . ' MB.',
         ]);
 
-        $path = $this->file->store('media', 'public');
+        $path = $this->file->store('media/original', 'public');
         $mime = $this->file->getMimeType();
         $type = str_contains($mime, 'video') ? 'video' : 'image';
 
@@ -44,18 +52,26 @@ class MediaManager extends Component
             $counter++;
         }
 
-        Media::create([
+        $media = Media::create([
             'title' => $title,
             'file_path' => $path,
             'type' => $type,
             'file_size' => $this->file->getSize(),
             'order' => Media::max('order') + 1,
             'is_active' => true,
+            'processing_status' => 'pending', // Set to pending for processing
         ]);
 
+        // Dispatch processing job based on type
+        if ($type === 'video') {
+            ProcessVideoJob::dispatch($media);
+            $this->dispatch('notify', message: 'Video diupload! Sedang diproses di background...', type: 'info');
+        } else {
+            ProcessImageJob::dispatch($media);
+            $this->dispatch('notify', message: 'Gambar diupload! Sedang diproses di background...', type: 'info');
+        }
+
         $this->reset(['file', 'type']);
-        $this->reset(['file', 'type']);
-        $this->dispatch('notify', message: 'Media berhasil diupload!', type: 'success');
     }
 
     public $showDeleteModal = false;
@@ -95,9 +111,23 @@ class MediaManager extends Component
         if ($this->mediaIdToDelete) {
             $media = Media::find($this->mediaIdToDelete);
             if ($media) {
+                // Delete all related files
                 Storage::disk('public')->delete($media->file_path);
+                if ($media->processed_path) {
+                    Storage::disk('public')->delete($media->processed_path);
+                }
+                if ($media->thumbnail_path) {
+                    Storage::disk('public')->delete($media->thumbnail_path);
+                }
+                if ($media->display_path) {
+                    Storage::disk('public')->delete($media->display_path);
+                }
+                
                 $media->delete();
                 $this->dispatch('notify', message: 'Media berhasil dihapus.', type: 'success');
+                
+                // Regenerate playlist
+                GeneratePlaylistJob::dispatch();
             }
         }
 
@@ -113,6 +143,9 @@ class MediaManager extends Component
             $media->update(['is_active' => !$media->is_active]);
             $status = $media->is_active ? 'diaktifkan' : 'dinonaktifkan';
             $this->dispatch('notify', message: "Media berhasil $status.", type: 'success');
+            
+            // Regenerate playlist
+            GeneratePlaylistJob::dispatch();
         }
     }
 
@@ -126,6 +159,9 @@ class MediaManager extends Component
             $current->update(['order' => $previous->order]);
             $previous->update(['order' => $tempOrder]);
             $this->dispatch('notify', message: 'Urutan berhasil diubah.', type: 'success');
+            
+            // Regenerate playlist
+            GeneratePlaylistJob::dispatch();
         }
     }
 
@@ -139,6 +175,9 @@ class MediaManager extends Component
             $current->update(['order' => $next->order]);
             $next->update(['order' => $tempOrder]);
             $this->dispatch('notify', message: 'Urutan berhasil diubah.', type: 'success');
+            
+            // Regenerate playlist
+            GeneratePlaylistJob::dispatch();
         }
     }
 
@@ -165,7 +204,7 @@ class MediaManager extends Component
         $maxFileSizeMB = $settings->max_file_size ?? 50;
 
         return view('livewire.media-manager', [
-            'medias' => $query->paginate(6),
+            'medias' => $query->paginate(10),
             'maxFileSizeMB' => $maxFileSizeMB,
         ])->layout('layouts.app');
     }

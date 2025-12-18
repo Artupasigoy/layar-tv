@@ -12,9 +12,15 @@ class Setting extends Model
         'image_duration',
         'enable_animation',
         'max_file_size',
+        'auto_reload_interval',
+        'playlist_hash',
     ];
+
     protected $casts = [
         'show_clock' => 'boolean',
         'enable_animation' => 'boolean',
+        'image_duration' => 'integer',
+        'max_file_size' => 'integer',
+        'auto_reload_interval' => 'integer',
     ];
 }

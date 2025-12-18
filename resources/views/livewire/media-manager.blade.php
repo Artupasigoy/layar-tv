@@ -1,4 +1,4 @@
-<div class="py-12">
+<div class="py-12" {{ $this->hasProcessingItems ? 'wire:poll.5s' : '' }}>
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
         <!-- Upload Form -->
@@ -225,7 +225,7 @@
                                     <div wire:click="openPreview({{ $media->id }})"
                                         class="flex-shrink-0 h-16 w-24 bg-gray-100 rounded-lg overflow-hidden shadow-sm border border-gray-200 relative group-hover:shadow-md transition-shadow cursor-pointer">
                                         @if($media->type == 'image')
-                                            <img src="{{ asset('storage/' . $media->file_path) }}" alt="{{ $media->title }}"
+                                            <img src="{{ $media->thumbnail_url }}" alt="{{ $media->title }}"
                                                 class="h-full w-full object-cover">
                                         @else
                                             <div class="h-full w-full flex items-center justify-center bg-gray-900 text-white">
@@ -244,9 +244,9 @@
                                     <div class="min-w-0 flex-1 w-full max-w-[200px] sm:max-w-none">
                                         <div class="flex items-center justify-between mr-4">
                                             <div class="min-w-0 flex-1 mr-2"> <!-- Added flex-1 and mr-2 -->
-                                                <p
+                                                <p title="{{ $media->title }}"
                                                     class="text-base font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
-                                                    {{ $media->title }}
+                                                    {{ Str::limit($media->title, 36) }}
                                                 </p>
                                                 <div class="flex items-center gap-2 mt-1 flex-wrap">
                                                     <span
@@ -256,6 +256,29 @@
                                                     @if($media->file_size)
                                                         <span class="text-xs text-gray-500">
                                                             {{ number_format($media->file_size / 1048576, 2) }} MB
+                                                        </span>
+                                                    @endif
+                                                    @if($media->processing_status === 'pending')
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            Menunggu
+                                                        </span>
+                                                    @elseif($media->processing_status === 'processing')
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 animate-pulse">
+                                                            <svg class="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                                            </svg>
+                                                            Memproses
+                                                        </span>
+                                                    @elseif($media->processing_status === 'failed')
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                                            <svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            Gagal
                                                         </span>
                                                     @endif
                                                 </div>

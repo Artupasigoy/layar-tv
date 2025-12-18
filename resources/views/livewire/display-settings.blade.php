@@ -132,6 +132,21 @@
                         @error('max_file_size') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
                     </div>
 
+                    <!-- Auto Reload Interval -->
+                    <div>
+                        <label for="auto_reload_interval" class="block text-sm font-medium text-gray-700 mb-1">Interval Auto-Reload Signage</label>
+                        <div class="relative rounded-md shadow-sm">
+                            <input wire:model="auto_reload_interval" type="number" id="auto_reload_interval" min="1" max="24"
+                                class="block w-full pr-12 border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm py-3"
+                                placeholder="6">
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">Jam</span>
+                            </div>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Layar signage akan refresh otomatis untuk memuat konten terbaru. Maks: 24 jam.</p>
+                        @error('auto_reload_interval') <span class="text-red-500 text-sm mt-1">{{ $message }}</span> @enderror
+                    </div>
+
                     <div class="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
                         <div x-data="{ shown: false, timeout: null }"
                             x-init="@this.on('saved', () => { shown = true; clearTimeout(timeout); timeout = setTimeout(() => { shown = false }, 2000); })"

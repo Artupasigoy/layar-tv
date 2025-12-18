@@ -90,6 +90,22 @@
                 </span>
             </a>
         </div>
+        
+        <!-- Storage Usage (Minimalist) -->
+        <div class="px-6 py-2 mb-2">
+            @php
+                $totalBytes = \App\Models\Media::sum('file_size');
+                $totalMB = $totalBytes / 1048576;
+                $percent = min(100, ($totalMB / 1024) * 100);
+            @endphp
+            <div class="flex items-center justify-between text-[10px] text-gray-400 mb-1 uppercase tracking-wider font-semibold">
+                <span>Storage</span>
+                <span>{{ number_format($totalMB, 1) }} MB</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-1 overflow-hidden">
+                <div class="bg-gray-400 h-1 rounded-full opacity-60" style="width: {{ $percent }}%"></div>
+            </div>
+        </div>
 
         <!-- User Profile (Bottom) -->
         <div class="w-full p-4 border-t border-gray-200 bg-gray-50 mt-auto flex-shrink-0">
