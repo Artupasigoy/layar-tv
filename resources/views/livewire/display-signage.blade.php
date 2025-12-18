@@ -38,7 +38,6 @@
         .equalizer-bar {
             width: 4px;
             background-color: #10b981;
-            /* Emerald 500 */
             animation: equalizer 1s infinite ease-in-out;
         }
 
@@ -63,36 +62,36 @@
         }
     </style>
 
-    <!-- Background Loop (Active Item) -->
+    <!-- Image Loop (Only Images in the loop) -->
     <template x-for="(item, index) in media" :key="item.id">
-        <div x-show="currentIndex === index" x-transition:enter="transition opacity duration-1000"
-            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-            x-transition:leave="transition opacity duration-1000" x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0" class="absolute inset-0 w-full h-full flex items-center justify-center">
-            <template x-if="item.type === 'image'">
-                <img :src="item.url" class="absolute inset-0 w-full h-full object-contain bg-black"
-                    :class="{ 'animate-ken-burns': settings.enable_animation }">
-            </template>
-
-            <template x-if="item.type === 'video'">
-                <video :src="item.url" playsinline :data-index="index"
-                    class="absolute inset-0 w-full h-full object-contain bg-black" @ended="next()"></video>
-            </template>
-
-            <!-- Visual Equalizer (Only for Preview & Video when Muted) -->
-            <template x-if="item.type === 'video' && isPreview && isMuted">
-                <div
-                    class="absolute bottom-4 right-4 bg-black/50 backdrop-blur px-3 py-2 rounded-lg flex items-end gap-1 z-[60]">
-                    <div class="equalizer-bar h-3"></div>
-                    <div class="equalizer-bar h-3"></div>
-                    <div class="equalizer-bar h-3"></div>
-                    <div class="equalizer-bar h-3"></div>
-                    <div class="equalizer-bar h-3"></div>
-                    <span class="text-[10px] text-white font-mono ml-1">AUDIO PLAYING (MUTED)</span>
-                </div>
-            </template>
+        <div x-show="currentIndex === index && item.type === 'image'"
+            x-transition:enter="transition opacity duration-1000" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="transition opacity duration-1000"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+            class="absolute inset-0 w-full h-full flex items-center justify-center">
+            <img :src="item.url" class="absolute inset-0 w-full h-full object-contain bg-black"
+                :class="{ 'animate-ken-burns': settings.enable_animation }">
         </div>
     </template>
+
+    <!-- SINGLE Global Video Player (Smart TV Optimization) -->
+    <!-- Only ONE video element exists. Source is swapped dynamically via JS. -->
+    <div x-show="currentItem && currentItem.type === 'video'" x-transition:enter="transition opacity duration-500"
+        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        class="absolute inset-0 w-full h-full bg-black flex items-center justify-center z-10">
+        <video x-ref="videoPlayer" class="w-full h-full object-contain" playsinline></video>
+    </div>
+
+    <!-- Visual Equalizer (Only for Preview & Video when Muted) -->
+    <div x-show="currentItem && currentItem.type === 'video' && isPreview && isMuted"
+        class="absolute bottom-16 right-4 bg-black/50 backdrop-blur px-3 py-2 rounded-lg flex items-end gap-1 z-[60]">
+        <div class="equalizer-bar h-3"></div>
+        <div class="equalizer-bar h-3"></div>
+        <div class="equalizer-bar h-3"></div>
+        <div class="equalizer-bar h-3"></div>
+        <div class="equalizer-bar h-3"></div>
+        <span class="text-[10px] text-white font-mono ml-1">AUDIO PLAYING (MUTED)</span>
+    </div>
 
     <!-- Overlay: Logo (Top Left) -->
     <div x-show="settings.logo_path" class="absolute top-3 left-3 sm:top-6 sm:left-6 z-50 pointer-events-none">
@@ -152,45 +151,39 @@
                 time: '',
                 date: '',
                 timer: null,
-                started: false, // Track if started
+                started: false,
                 isMuted: false,
                 isPreview: false,
 
+                // Computed-like property for current item
+                get currentItem() {
+                    return this.media[this.currentIndex] || null;
+                },
+
                 init() {
-                    // Check for muted query param
                     const urlParams = new URLSearchParams(window.location.search);
-                    // If 'muted' param exists, we are in Preview Mode
                     if (urlParams.has('muted')) {
                         this.isPreview = true;
-                        this.isMuted = true; // Default to muted for preview
-                        this.started = false; // Do NOT auto-start, wait for user click
+                        this.isMuted = true;
+                        this.started = false;
                     } else {
-                        // Normal display mode
-                        this.started = false; // Wait for interaction
+                        this.started = false;
                     }
 
-                    // Start clock immediately
                     this.startClock();
-                    // Listen for updates from Livewire
                     Livewire.on('content-updated', () => {
                         console.log('Content updated, reloading...');
                         window.location.reload();
                     });
 
-                    // Start polling immediately for updates regardless of play state
                     setInterval(() => {
                         this.checkUpdates();
                     }, 5000);
-
-                    // Note: We do NOT call playCurrent() here anymore for preview.
-                    // It will be called by startSignage() when the user clicks the overlay.
                 },
 
                 toggleMute() {
                     this.isMuted = !this.isMuted;
-
-                    // If playing a video, update its state immediately
-                    const video = document.querySelector(`video[data-index="${this.currentIndex}"]`);
+                    const video = this.$refs.videoPlayer;
                     if (video) {
                         video.muted = this.isMuted;
                     }
@@ -198,7 +191,6 @@
 
                 startSignage() {
                     this.started = true;
-                    // Try to unlock audio context if exists
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
                     if (AudioContext) {
                         const ctx = new AudioContext();
@@ -206,14 +198,12 @@
                     }
                     this.playCurrent();
 
-                    // Start polling
                     setInterval(() => {
                         this.checkUpdates();
                     }, 5000);
                 },
 
                 checkUpdates() {
-                    // This calls the PHP method
                     @this.checkForUpdates(this.hash);
                 },
 
@@ -221,24 +211,32 @@
                     if (this.media.length === 0) return;
 
                     const currentItem = this.media[this.currentIndex];
-
                     if (this.timer) clearTimeout(this.timer);
 
+                    // Always pause and reset the single video player first
+                    const video = this.$refs.videoPlayer;
+                    if (video) {
+                        video.pause();
+                        video.removeAttribute('src');
+                        video.load(); // Reset video element
+                    }
+
                     if (currentItem.type === 'image') {
-                        // Settings duration is in seconds
                         const duration = (this.settings.image_duration || 10) * 1000;
                         this.timer = setTimeout(() => {
                             this.next();
                         }, duration);
                     } else if (currentItem.type === 'video') {
-                        // Use querySelector to find the specific video element for this index
-                        // Wait for Alpine to render/show it
                         this.$nextTick(() => {
-                            const video = document.querySelector(`video[data-index="${this.currentIndex}"]`);
+                            const video = this.$refs.videoPlayer;
                             if (video) {
-                                video.currentTime = 0;
-                                // Respect isMuted flag
+                                video.src = currentItem.url;
                                 video.muted = this.isMuted;
+                                video.onended = () => this.next();
+                                video.onerror = (e) => {
+                                    console.error("Video error:", e);
+                                    this.next(); // Skip on error
+                                };
                                 video.play().catch(e => {
                                     console.error("Autoplay failed:", e);
                                 });
@@ -249,8 +247,6 @@
 
                 next() {
                     this.currentIndex = (this.currentIndex + 1) % this.media.length;
-
-                    // Allow UI to update before playing new item
                     this.$nextTick(() => {
                         this.playCurrent();
                     });
@@ -259,13 +255,10 @@
                 startClock() {
                     const updateTime = () => {
                         const now = new Date();
-                        // Time: 14:30
                         this.time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-                        // Date: Senin, 16 Des 2024
                         this.date = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
                     };
-
-                    updateTime(); // Run immediately
+                    updateTime();
                     setInterval(updateTime, 1000);
                 }
             }));

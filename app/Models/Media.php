@@ -10,6 +10,7 @@ class Media extends Model
         'title',
         'file_path',
         'type',
+        'file_size',
         'order',
         'is_active',
     ];

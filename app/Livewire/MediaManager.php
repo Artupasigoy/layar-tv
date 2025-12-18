@@ -43,6 +43,7 @@ class MediaManager extends Component
             'title' => $title,
             'file_path' => $path,
             'type' => $type,
+            'file_size' => $this->file->getSize(),
             'order' => Media::max('order') + 1,
             'is_active' => true,
         ]);

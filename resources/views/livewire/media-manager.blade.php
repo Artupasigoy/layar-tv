@@ -215,10 +215,17 @@
                                                     class="text-base font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
                                                     {{ $media->title }}
                                                 </p>
-                                                <span
-                                                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase mt-1 {{ $media->type == 'video' ? 'bg-pink-100 text-pink-800' : 'bg-blue-100 text-blue-800' }}">
-                                                    {{ $media->type }}
-                                                </span>
+                                                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                                                    <span
+                                                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase {{ $media->type == 'video' ? 'bg-pink-100 text-pink-800' : 'bg-blue-100 text-blue-800' }}">
+                                                        {{ $media->type }}
+                                                    </span>
+                                                    @if($media->file_size)
+                                                        <span class="text-xs text-gray-500">
+                                                            {{ number_format($media->file_size / 1048576, 2) }} MB
+                                                        </span>
+                                                    @endif
+                                                </div>
                                             </div>
 
                                             <!-- Toggle Switch -->
