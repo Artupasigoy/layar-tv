@@ -10,6 +10,7 @@ services:
             - .:/var/www/html
             - ./storage:/var/www/html/storage
             - ./bootstrap/cache:/var/www/html/bootstrap/cache
+            - ./docker/php/conf.d/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
 
         environment:
             - APP_ENV=production
