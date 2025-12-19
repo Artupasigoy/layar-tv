@@ -70,7 +70,7 @@
             x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
             class="absolute inset-0 w-full h-full flex items-center justify-center">
             <img :src="item.url" class="absolute inset-0 w-full h-full object-contain bg-black"
-                :class="{ 'animate-ken-burns': settings.enable_animation }">
+                :class="{ 'animate-ken-burns': settings.enable_animation && currentIndex === item.originalIndex }">
         </div>
     </template>
 
